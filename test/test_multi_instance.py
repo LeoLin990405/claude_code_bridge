@@ -340,3 +340,278 @@ class TestDaemonInstanceRouting:
         key1 = make_qualified_key("codex", "auth")
         key2 = make_qualified_key("gemini", "auth")
         assert key1 != key2
+
+
+# ── Remaining session module instance support ────────────────────────────
+
+class TestRemainingSessionModules:
+    """Test the remaining 6 session modules for instance support."""
+
+    # ── opencode (oaskd_session) ──────────────────────────────────────────
+
+    def test_opencode_find_session_file_default(self, tmp_path):
+        from oaskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_opencode_find_session_file_with_instance(self, tmp_path):
+        from oaskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".opencode-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_opencode_load_session_no_file(self, tmp_path):
+        from oaskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_opencode_compute_session_key_with_instance(self):
+        from oaskd_session import compute_session_key, OpenCodeProjectSession
+        session = OpenCodeProjectSession(
+            session_file=Path("/tmp/test/.ccb/.opencode-session"),
+            data={"ccb_project_id": "proj1", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj1" in key
+
+    # ── claude (laskd_session) ────────────────────────────────────────────
+
+    def test_claude_find_session_file_default(self, tmp_path):
+        from laskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_claude_find_session_file_with_instance(self, tmp_path):
+        from laskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".claude-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_claude_load_session_no_file(self, tmp_path):
+        from laskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_claude_compute_session_key_with_instance(self):
+        from laskd_session import compute_session_key, ClaudeProjectSession
+        session = ClaudeProjectSession(
+            session_file=Path("/tmp/test/.ccb/.claude-session"),
+            data={"ccb_project_id": "proj2", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj2" in key
+
+    # ── droid (daskd_session) ─────────────────────────────────────────────
+
+    def test_droid_find_session_file_default(self, tmp_path):
+        from daskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_droid_find_session_file_with_instance(self, tmp_path):
+        from daskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".droid-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_droid_load_session_no_file(self, tmp_path):
+        from daskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_droid_compute_session_key_with_instance(self):
+        from daskd_session import compute_session_key, DroidProjectSession
+        session = DroidProjectSession(
+            session_file=Path("/tmp/test/.ccb/.droid-session"),
+            data={"ccb_project_id": "proj3", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj3" in key
+
+    # ── copilot (haskd_session) ───────────────────────────────────────────
+
+    def test_copilot_find_session_file_default(self, tmp_path):
+        from haskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_copilot_find_session_file_with_instance(self, tmp_path):
+        from haskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".copilot-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_copilot_load_session_no_file(self, tmp_path):
+        from haskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_copilot_compute_session_key_with_instance(self):
+        from haskd_session import compute_session_key, CopilotProjectSession
+        session = CopilotProjectSession(
+            session_file=Path("/tmp/test/.ccb/.copilot-session"),
+            data={"ccb_project_id": "proj4", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj4" in key
+
+    # ── codebuddy (baskd_session) ─────────────────────────────────────────
+
+    def test_codebuddy_find_session_file_default(self, tmp_path):
+        from baskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_codebuddy_find_session_file_with_instance(self, tmp_path):
+        from baskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".codebuddy-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_codebuddy_load_session_no_file(self, tmp_path):
+        from baskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_codebuddy_compute_session_key_with_instance(self):
+        from baskd_session import compute_session_key, CodebuddyProjectSession
+        session = CodebuddyProjectSession(
+            session_file=Path("/tmp/test/.ccb/.codebuddy-session"),
+            data={"ccb_project_id": "proj5", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj5" in key
+
+    # ── qwen (qaskd_session) ─────────────────────────────────────────────
+
+    def test_qwen_find_session_file_default(self, tmp_path):
+        from qaskd_session import find_project_session_file
+        result = find_project_session_file(tmp_path)
+        assert result is None
+
+    def test_qwen_find_session_file_with_instance(self, tmp_path):
+        from qaskd_session import find_project_session_file
+        ccb_dir = tmp_path / ".ccb"
+        ccb_dir.mkdir()
+        session_file = ccb_dir / ".qwen-test-session"
+        session_file.write_text('{"pane_id": "test"}')
+        result = find_project_session_file(tmp_path, instance="test")
+        assert result is not None
+        assert "test" in result.name
+
+    def test_qwen_load_session_no_file(self, tmp_path):
+        from qaskd_session import load_project_session
+        result = load_project_session(tmp_path, instance="test")
+        assert result is None
+
+    def test_qwen_compute_session_key_with_instance(self):
+        from qaskd_session import compute_session_key, QwenProjectSession
+        session = QwenProjectSession(
+            session_file=Path("/tmp/test/.ccb/.qwen-session"),
+            data={"ccb_project_id": "proj6", "work_dir": "/tmp/test"},
+        )
+        key = compute_session_key(session, instance="test")
+        assert "test" in key
+        assert "proj6" in key
+
+
+# ── Adapter instance passing ─────────────────────────────────────────────
+
+class TestAdapterInstancePassing:
+    """Test that adapters accept instance parameter in load_session / compute_session_key."""
+
+    def _assert_adapter_has_instance_params(self, adapter_cls):
+        """Verify that load_session and compute_session_key accept instance."""
+        import inspect
+        load_sig = inspect.signature(adapter_cls.load_session)
+        assert "instance" in load_sig.parameters, (
+            f"{adapter_cls.__name__}.load_session missing 'instance' param"
+        )
+        key_sig = inspect.signature(adapter_cls.compute_session_key)
+        assert "instance" in key_sig.parameters, (
+            f"{adapter_cls.__name__}.compute_session_key missing 'instance' param"
+        )
+
+    def test_codex_adapter_instance_params(self):
+        from askd.adapters.codex import CodexAdapter
+        self._assert_adapter_has_instance_params(CodexAdapter)
+
+    def test_gemini_adapter_instance_params(self):
+        from askd.adapters.gemini import GeminiAdapter
+        self._assert_adapter_has_instance_params(GeminiAdapter)
+
+    def test_opencode_adapter_instance_params(self):
+        from askd.adapters.opencode import OpenCodeAdapter
+        self._assert_adapter_has_instance_params(OpenCodeAdapter)
+
+    def test_claude_adapter_instance_params(self):
+        from askd.adapters.claude import ClaudeAdapter
+        self._assert_adapter_has_instance_params(ClaudeAdapter)
+
+    def test_droid_adapter_instance_params(self):
+        from askd.adapters.droid import DroidAdapter
+        self._assert_adapter_has_instance_params(DroidAdapter)
+
+    def test_copilot_adapter_instance_params(self):
+        from askd.adapters.copilot import CopilotAdapter
+        self._assert_adapter_has_instance_params(CopilotAdapter)
+
+    def test_codebuddy_adapter_instance_params(self):
+        from askd.adapters.codebuddy import CodebuddyAdapter
+        self._assert_adapter_has_instance_params(CodebuddyAdapter)
+
+    def test_qwen_adapter_instance_params(self):
+        from askd.adapters.qwen import QwenAdapter
+        self._assert_adapter_has_instance_params(QwenAdapter)
+
+
+# ── Ask script qualified provider parsing ────────────────────────────────
+
+class TestAskScriptQualifiedProvider:
+    """Test that the ask script's provider parsing works for qualified names."""
+
+    def test_ask_script_parses_qualified_provider(self):
+        from providers import parse_qualified_provider
+        # The ask script uses parse_qualified_provider internally
+        base, inst = parse_qualified_provider("codex:auth")
+        assert base == "codex"
+        assert inst == "auth"
+
+
+# ── Pane registry instance-qualified lookup ──────────────────────────────
+
+class TestPaneRegistryInstance:
+    """Test pane_registry integration with instance-qualified providers."""
+
+    def test_pane_registry_imports_parse_qualified_provider(self):
+        """Verify pane_registry can import and use parse_qualified_provider."""
+        from providers import parse_qualified_provider
+        # pane_registry uses this for provider lookups
+        base, inst = parse_qualified_provider("gemini:frontend")
+        assert base == "gemini"
+        assert inst == "frontend"

@@ -555,10 +555,12 @@ class AILauncher:
         resume: bool = False,
         auto: bool = False,
         cmd_config: dict | None = None,
+        instance: str | None = None,
     ):
         self.providers = providers or ["codex"]
         self.resume = resume
         self.auto = auto
+        self.instance = instance
         self.cmd_config = self._normalize_cmd_config(cmd_config)
         self.script_dir = Path(__file__).resolve().parent
         self.invocation_dir = Path.cwd()
@@ -615,7 +617,9 @@ class AILauncher:
     def _project_config_dir(self) -> Path:
         return resolve_project_config_dir(self.project_root)
 
-    def _project_session_file(self, filename: str) -> Path:
+    def _project_session_file(self, filename: str, instance: str | None = None) -> Path:
+        from providers import session_filename_for_instance
+        filename = session_filename_for_instance(filename, instance)
         cfg = self._project_config_dir()
         return cfg / filename
 
@@ -737,7 +741,7 @@ class AILauncher:
         try:
             backend = TmuxBackend()
             pane_id = backend.get_current_pane_id()
-            title = f"CCB-{provider.capitalize()}"
+            title = f"CCB-{provider.capitalize()}" + (f"-{self.instance}" if self.instance else "")
             backend.set_pane_title(pane_id, title)
             backend.set_pane_user_option(pane_id, "@ccb_agent", provider.capitalize())
         except Exception:
@@ -1253,7 +1257,7 @@ class AILauncher:
             except StopIteration:
                 use_parent = None
 
-        pane_title_marker = f"CCB-{provider.capitalize()}"
+        pane_title_marker = f"CCB-{provider.capitalize()}" + (f"-{self.instance}" if self.instance else "")
         title_cmd = _build_pane_title_cmd(pane_title_marker)
         env_overrides = self._provider_env_overrides(provider)
         full_cmd = title_cmd + self._build_env_prefix(env_overrides) + _build_export_path_cmd(self.script_dir / "bin") + start_cmd
@@ -1352,7 +1356,7 @@ class AILauncher:
             return data if isinstance(data, dict) else {}
 
     def _claude_session_file(self) -> Path:
-        return self._project_session_file(".claude-session")
+        return self._project_session_file(".claude-session", self.instance)
 
     def _backfill_claude_session_work_dir_fields(self) -> None:
         path = self._claude_session_file()
@@ -2110,7 +2114,7 @@ class AILauncher:
 
         env_overrides = self._provider_env_overrides("codex")
         start_cmd = self._build_env_prefix(env_overrides) + _build_export_path_cmd(self.script_dir / "bin") + self._build_codex_start_cmd()
-        pane_title_marker = "CCB-Codex"
+        pane_title_marker = "CCB-Codex" + (f"-{self.instance}" if self.instance else "")
 
         backend = TmuxBackend()
 
@@ -2201,7 +2205,7 @@ class AILauncher:
 
         env_overrides = self._provider_env_overrides("gemini")
         start_cmd = self._build_env_prefix(env_overrides) + _build_export_path_cmd(self.script_dir / "bin") + self._build_gemini_start_cmd()
-        pane_title_marker = "CCB-Gemini"
+        pane_title_marker = "CCB-Gemini" + (f"-{self.instance}" if self.instance else "")
 
         backend = TmuxBackend()
 
@@ -2252,7 +2256,7 @@ class AILauncher:
 
         env_overrides = self._provider_env_overrides("opencode")
         start_cmd = self._build_env_prefix(env_overrides) + _build_export_path_cmd(self.script_dir / "bin") + self._build_opencode_start_cmd()
-        pane_title_marker = "CCB-OpenCode"
+        pane_title_marker = "CCB-OpenCode" + (f"-{self.instance}" if self.instance else "")
 
         backend = TmuxBackend()
 
@@ -2306,7 +2310,7 @@ class AILauncher:
 
         env_overrides = self._provider_env_overrides("droid")
         start_cmd = self._build_env_prefix(env_overrides) + _build_export_path_cmd(self.script_dir / "bin") + self._build_droid_start_cmd()
-        pane_title_marker = "CCB-Droid"
+        pane_title_marker = "CCB-Droid" + (f"-{self.instance}" if self.instance else "")
 
         backend = TmuxBackend()
 
@@ -2396,7 +2400,7 @@ class AILauncher:
             print("❌ Unable to determine current pane id for Codex", file=sys.stderr)
             return 1
 
-        pane_title_marker = "CCB-Codex"
+        pane_title_marker = "CCB-Codex" + (f"-{self.instance}" if self.instance else "")
         if self.terminal_type == "tmux":
             try:
                 backend = TmuxBackend()
@@ -2509,7 +2513,7 @@ class AILauncher:
             print("❌ Unable to determine current pane id for Gemini", file=sys.stderr)
             return 1
 
-        pane_title_marker = "CCB-Gemini"
+        pane_title_marker = "CCB-Gemini" + (f"-{self.instance}" if self.instance else "")
         if self.terminal_type == "tmux":
             try:
                 backend = TmuxBackend()
@@ -2544,7 +2548,7 @@ class AILauncher:
             print("❌ Unable to determine current pane id for OpenCode", file=sys.stderr)
             return 1
 
-        pane_title_marker = "CCB-OpenCode"
+        pane_title_marker = "CCB-OpenCode" + (f"-{self.instance}" if self.instance else "")
         if self.terminal_type == "tmux":
             try:
                 backend = TmuxBackend()
@@ -2605,7 +2609,7 @@ class AILauncher:
             print("❌ Unable to determine current pane id for Droid", file=sys.stderr)
             return 1
 
-        pane_title_marker = "CCB-Droid"
+        pane_title_marker = "CCB-Droid" + (f"-{self.instance}" if self.instance else "")
         if self.terminal_type == "tmux":
             try:
                 backend = TmuxBackend()
@@ -2646,7 +2650,7 @@ class AILauncher:
         return 1
 
     def _write_codex_session(self, runtime, tmux_session, input_fifo, output_fifo, pane_id=None, pane_title_marker=None, codex_start_cmd=None):
-        session_file = self._project_session_file(".codex-session")
+        session_file = self._project_session_file(".codex-session", self.instance)
 
         # Pre-check permissions
         writable, reason, fix = check_session_writable(session_file)
@@ -2708,8 +2712,11 @@ class AILauncher:
         return True
 
     def _write_cend_registry(self, claude_pane_id: str, codex_pane_id: str | None) -> bool:
+        from providers import make_qualified_key
         if not claude_pane_id:
             return False
+        claude_key = make_qualified_key("claude", self.instance)
+        codex_key = make_qualified_key("codex", self.instance)
         record = {
             "ccb_session_id": self.session_id,
             "claude_pane_id": claude_pane_id,
@@ -2718,8 +2725,8 @@ class AILauncher:
             "work_dir": str(Path.cwd()),
             "terminal": self.terminal_type,
             "providers": {
-                "claude": {"pane_id": claude_pane_id},
-                "codex": {"pane_id": codex_pane_id},
+                claude_key: {"pane_id": claude_pane_id},
+                codex_key: {"pane_id": codex_pane_id},
             },
         }
         ok = upsert_registry(record)
@@ -2736,7 +2743,7 @@ class AILauncher:
             self._write_cend_registry(claude_pane_id, codex_pane_id)
 
     def _write_gemini_session(self, runtime, tmux_session, pane_id=None, pane_title_marker=None, start_cmd=None):
-        session_file = self._project_session_file(".gemini-session")
+        session_file = self._project_session_file(".gemini-session", self.instance)
 
         # Pre-check permissions
         writable, reason, fix = check_session_writable(session_file)
@@ -2785,7 +2792,7 @@ class AILauncher:
         return True
 
     def _write_opencode_session(self, runtime, tmux_session, pane_id=None, pane_title_marker=None, start_cmd=None):
-        session_file = self._project_session_file(".opencode-session")
+        session_file = self._project_session_file(".opencode-session", self.instance)
 
         writable, reason, fix = check_session_writable(session_file)
         if not writable:
@@ -2834,7 +2841,7 @@ class AILauncher:
         return True
 
     def _write_droid_session(self, runtime, tmux_session, pane_id=None, pane_title_marker=None, start_cmd=None):
-        session_file = self._project_session_file(".droid-session")
+        session_file = self._project_session_file(".droid-session", self.instance)
 
         writable, reason, fix = check_session_writable(session_file)
         if not writable:
@@ -3149,8 +3156,9 @@ class AILauncher:
                 print(f"ℹ️ {t('no_claude_session')}")
 
         start_cmd = " ".join(cmd_parts)
+        claude_title = "CCB-Claude" + (f"-{self.instance}" if self.instance else "")
         full_cmd = (
-            _build_pane_title_cmd("CCB-Claude")
+            _build_pane_title_cmd(claude_title)
             + self._build_env_prefix(env_overrides)
             + _build_export_path_cmd(self.script_dir / "bin")
             + start_cmd
@@ -3167,7 +3175,7 @@ class AILauncher:
             backend = TmuxBackend()
             pane_id = backend.create_pane("", run_cwd, direction=use_direction, percent=50, parent_pane=use_parent)
             backend.respawn_pane(pane_id, cmd=full_cmd, cwd=run_cwd, remain_on_exit=True)
-            backend.set_pane_title(pane_id, "CCB-Claude")
+            backend.set_pane_title(pane_id, claude_title)
             backend.set_pane_user_option(pane_id, "@ccb_agent", "Claude")
             self.tmux_panes["claude"] = pane_id
 
@@ -3176,7 +3184,7 @@ class AILauncher:
                 session_id=self._read_local_claude_session_id(),
                 active=True,
                 pane_id=str(pane_id or ""),
-                pane_title_marker="CCB-Claude",
+                pane_title_marker=claude_title,
                 terminal=self.terminal_type,
             )
         except Exception:
@@ -3427,7 +3435,7 @@ class AILauncher:
                     session_id=self._read_local_claude_session_id(),
                     active=True,
                     pane_id=str(self.anchor_pane_id or ""),
-                    pane_title_marker="CCB-Claude",
+                    pane_title_marker="CCB-Claude" + (f"-{self.instance}" if self.instance else ""),
                     terminal=self.terminal_type,
                 )
             except Exception:
@@ -3637,9 +3645,11 @@ def cmd_start(args):
         pane_id = str(entry.get("pane_id") or "").strip()
         return record, pane_id
 
-    # Enforce single ccb instance per directory.
+    # Enforce single ccb instance per directory (instance-aware).
     lock_cwd = str(Path.cwd().resolve())
-    ccb_lock = ProviderLock("ccb", timeout=0.1, cwd=lock_cwd)
+    _instance = getattr(args, "instance", None)
+    lock_name = f"ccb:{_instance}" if _instance else "ccb"
+    ccb_lock = ProviderLock(lock_name, timeout=0.1, cwd=lock_cwd)
     if not ccb_lock.try_acquire():
         pid = ""
         try:
@@ -3713,6 +3723,7 @@ def cmd_start(args):
         resume=resume,
         auto=auto,
         cmd_config=cmd_config,
+        instance=getattr(args, "instance", None),
     )
     return launcher.run_up()
 
@@ -3990,6 +4001,7 @@ def _parse_providers_with_cmd(values: list[str]) -> tuple[list[str], bool]:
     Parse providers from argv and treat "cmd" as a separate flag.
     Returns (providers, cmd_enabled).
     """
+    from providers import parse_qualified_provider
     allowed = {"codex", "gemini", "opencode", "claude", "droid"}
     raw_parts = _split_provider_tokens(values)
     if not raw_parts:
@@ -4004,10 +4016,11 @@ def _parse_providers_with_cmd(values: list[str]) -> tuple[list[str], bool]:
         if p == "cmd":
             cmd_enabled = True
             continue
+        base, _instance = parse_qualified_provider(p)
         if p in seen:
             continue
         seen.add(p)
-        if p in allowed:
+        if base in allowed:
             parsed.append(p)
         else:
             unknown.append(p)
@@ -4889,6 +4902,7 @@ def main():
     )
     start_parser.add_argument("-r", "--resume", "--restore", action="store_true", help="Resume context")
     start_parser.add_argument("-a", "--auto", action="store_true", help="Full auto permission mode")
+    start_parser.add_argument("--instance", "-i", default=None, help="Instance name for multi-instance support (e.g., --instance auth)")
     args = start_parser.parse_args(argv)
     return cmd_start(args)
 
