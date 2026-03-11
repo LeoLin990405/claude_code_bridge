@@ -9,15 +9,28 @@ from worker_pool import BaseSessionWorker, PerSessionWorkerPool
 
 
 class _NoopThread(threading.Thread):
+    """A lightweight thread that stays alive until explicitly stopped.
+
+    Uses ``started_keys`` (not ``_started``) to avoid overwriting the
+    internal ``threading.Thread._started`` event, which ``is_alive()``
+    relies on across all Python versions.
+    """
+
     def __init__(self, session_key: str, started: list[str]):
         super().__init__(daemon=True)
         self.session_key = session_key
-        self._track = started  # avoid overriding threading.Thread._started
+        self.started_keys = started
+        self._stop_event = threading.Event()
 
-    def start(self) -> None:  # type: ignore[override]
-        self._track.append(self.session_key)
-        # Mark as "alive" by setting _started event (required for is_alive() check)
-        self._started.set()
+    def run(self) -> None:
+        self._stop_event.wait()
+
+    def start(self) -> None:
+        self.started_keys.append(self.session_key)
+        super().start()
+
+    def stop(self) -> None:
+        self._stop_event.set()
 
 
 def test_per_session_worker_pool_reuses_same_key() -> None:
@@ -31,6 +44,11 @@ def test_per_session_worker_pool_reuses_same_key() -> None:
     assert w1 is not w3
     assert started.count("k1") == 1
     assert started.count("k2") == 1
+
+    # Clean up threads
+    for w in (w1, w3):
+        w.stop()
+        w.join(timeout=2.0)
 
 
 @dataclass

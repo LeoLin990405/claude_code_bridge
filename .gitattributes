@@ -1,0 +1,4 @@
+# Force Unix line endings for shell scripts (fixes WSL/Windows CI)
+*.sh text eol=lf
+bin/* text eol=lf
+ccb text eol=lf
